@@ -1,0 +1,32 @@
+trigger:
+- master
+
+pool:
+  name: self-hosted-agents
+
+variables:
+  IMAGE_NAME: anuroop21/python-azure-storage
+  TAG: $(Build.BuildId)
+
+steps:
+- script: |
+    docker build -t $(IMAGE_NAME):$(TAG) 01-first-deployment
+  displayName: Build Docker Image
+
+- script: |
+    docker tag $(IMAGE_NAME):$(TAG) $(IMAGE_NAME):latest
+  displayName: Tag Image
+
+- script: |
+    echo $(DOCKER_PASSWORD) | docker login -u $(DOCKER_USERNAME) --password-stdin
+  displayName: Docker Login
+
+- script: |
+    docker push $(IMAGE_NAME):$(TAG)
+    docker push $(IMAGE_NAME):latest
+  displayName: Push Images
+
+
+- script: |
+    kubectl apply -f 01-first-deployment/k8s
+  displayName: Deploy to AKS
