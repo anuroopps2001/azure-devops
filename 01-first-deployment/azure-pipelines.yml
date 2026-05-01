@@ -9,6 +9,7 @@ variables:
   TAG: $(Build.BuildId)
 
 steps:
+
 - script: |
     docker build -t $(IMAGE_NAME):$(TAG) 01-first-deployment
   displayName: Build Docker Image
@@ -18,7 +19,7 @@ steps:
   displayName: Tag Image
 
 - script: |
-    echo $(DOCKER_PASSWORD) | docker login -u $(DOCKER_USERNAME) --password-stdin
+    echo "$(DOCKER_PASSWORD)" | docker login -u "$(DOCKER_USERNAME)" --password-stdin
   displayName: Docker Login
 
 - script: |
@@ -26,7 +27,16 @@ steps:
     docker push $(IMAGE_NAME):latest
   displayName: Push Images
 
+- script: |
+    kubectl apply -f 01-first-deployment/k8s/serviceaccount.yaml
+    kubectl apply -f 01-first-deployment/k8s/deployment.yaml
+  displayName: Apply Manifests
 
 - script: |
-    kubectl apply -f 01-first-deployment/k8s
-  displayName: Deploy to AKS
+    kubectl set image deployment/blob-app \
+      app=$(IMAGE_NAME):$(TAG)
+  displayName: Update Deployment Image
+
+- script: |
+    kubectl rollout status deployment/blob-app
+  displayName: Verify Deployment
