@@ -5,7 +5,7 @@ pool:
   name: self-hosted-agents
 
 variables:
-  IMAGE_NAME: anuroopmgsq..azurecr.io/python-azure-storage
+  IMAGE_NAME: anuroopmgsq.azurecr.io/python-azure-storage
   TAG: $(Build.BuildId)
 
 steps:

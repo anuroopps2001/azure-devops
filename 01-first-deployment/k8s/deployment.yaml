@@ -18,7 +18,7 @@ spec:
       serviceAccountName: storage-sa
       containers:
         - name: app
-          image: anuroopmgsq/python-azure-storage:v1
+          image: anuroopmgsq.azurecr.io/python-azure-storage:v1
           env:
             - name: STORAGE_ACCOUNT
               value: "anurooppsa9uz"
