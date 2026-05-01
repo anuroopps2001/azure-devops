@@ -5,7 +5,7 @@ pool:
   name: self-hosted-agents
 
 variables:
-  IMAGE_NAME: anuroop21/python-azure-storage
+  IMAGE_NAME: anuroopmgsq/python-azure-storage
   TAG: $(Build.BuildId)
 
 steps:
@@ -17,10 +17,6 @@ steps:
 - script: |
     docker tag $(IMAGE_NAME):$(TAG) $(IMAGE_NAME):latest
   displayName: Tag Image
-
-- script: |
-    echo "$(DOCKER_PASSWORD)" | docker login -u "$(DOCKER_USERNAME)" --password-stdin
-  displayName: Docker Login
 
 - script: |
     docker push $(IMAGE_NAME):$(TAG)
