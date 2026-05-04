@@ -20,11 +20,6 @@ stages:
       displayName: Build Image
 
     - script: |
-        echo "Tagging Image"
-        docker tag $(IMAGE_NAME):$(TAG) $(IMAGE_NAME):latest
-      displayName: Tag Image
-
-    - script: |
         echo "Logging into ACR using managed identity"
         az login --identity --client-id $(CLIENT_ID)
         az acr login --name anuroopmgsq
@@ -33,31 +28,28 @@ stages:
     - script: |
         echo "Pushing Image"
         docker push $(IMAGE_NAME):$(TAG)
-        docker push $(IMAGE_NAME):latest
       displayName: Push Images
 
-- stage: Deploy
-  displayName: Deploy to AKS
+- stage: Deploy_Dev
+  displayName: Deploy to Dev
   dependsOn: Build   # Will start only if Build stage gets successful
 
   jobs:
-  - job: Deploy
+  - job: DeployDev
     pool: 
       name: self-hosted-agents
 
     steps:
 
     - script: |
+        set -e
         echo "Logging into Azure..."
         az login --identity --client-id $(CLIENT_ID)
-        echo "Fetching AKS credentials..."
         az aks get-credentials --resource-group rg-hubspoke-dev --name aks-hubspoke-dev --overwrite-existing
-      displayName: Authenticate and Set K8s Context
 
-    - script: |
-        echo "Applying helm chart"
         helm upgrade --install blob-app 01-first-deployment/helm-chart/blob-app \
-        --set image.repository=$(IMAGE_NAME) \
+        -n dev \
+        -f  01-first-deployment/helm-chart/blob-app/values-dev.yaml\
         --set image.tag=$(TAG)
 
         echo "Verifying rollout.."
@@ -80,4 +72,48 @@ stages:
             exit 1
           fi
         fi
-      displayName: Deployment with helm and Rollback
+      displayName: Deployment to Dev
+
+- stage: Deploy_prod
+  dependsOn: Deploy_Dev  # Stage Name
+  condition: succeeded()
+
+  jobs:
+  - job: DeployProd
+    pool: self-hosted-agents
+    
+    steps:
+    - script: |
+        set -e
+        echo "Logging into Azure..."
+        az login --identity --client-id $(CLIENT_ID)
+        az aks get-credentials --resource-group rg-hubspoke-dev --name aks-hubspoke-dev --overwrite-existing
+
+        helm upgrade --install blob-app 01-first-deployment/helm-chart/blob-app \
+        - prod \
+        -f 01-first-deployment/helm-chart/blob-app/values-prod.yaml \
+        --set image.tag=$(TAG)
+
+        echo "Verifying rollout.."
+        if ! kubectl rollout status deploy/blob-app --timeout=60s; then
+          echo "Deployment Failed! Rolling back to previous stable version"
+
+          LAST_STABLE_REVISION=$(helm history blob-app -ojson | jq '.[-2].revision')
+
+          echo "Rolling back to previous stable version $LAST_STABLE_VERSION"
+          helm rollback blob-app $LAST_STABLE_VERSION
+
+          echo "Verifying Rollback..."
+          ROLLBACK_STATUS=$(helm status blob-app -ojson | jq -r .info.status)
+
+          if [ "$ROLLBACK_STATUS" == "deployed"]; then
+            echo "Rollback confirmed by helm"
+            kubectl rollout status deploy/blob-app --timeout=60s
+          else
+            echo "Rollback failed or struck in $ROLLBACK_STATUS"
+            exit 1
+          fi
+        fi
+      displayName: Deployment to Prod
+
+  
