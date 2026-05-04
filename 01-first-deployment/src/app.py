@@ -1,23 +1,32 @@
+import sys
+import os
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
-import os
+from azure.core.exceptions import HttpResponseError
 
-account_name = os.environ["STORAGE_ACCOUNT"]
+def upload():
+    try:
+        account_name = os.environ["STORAGE_ACCOUNT"]
+        container_name = os.environ.get("CONTAINER_NAME", "appdata")
+        blob_name = "from-app.txt"
 
-credential = DefaultAzureCredential()
+        credential = DefaultAzureCredential()
+        blob_service_client = BlobServiceClient(
+            f"https://{account_name}.blob.core.windows.net",
+            credential=credential
+        )
 
-blob_service_client = BlobServiceClient(
-    f"https://{account_name}.blob.core.windows.net",
-    credential=credential
-)
+        blob_client = blob_service_client.get_blob_client(container=container_name, blob=blob_name)
+        data = b"Hello from AKS using Workload Identity!"
 
-container_name = "appdat"
-blob_name = "from-app.txt"
+        print(f"Attempting to upload to container: {container_name}...")
+        blob_client.upload_blob(data, overwrite=True)
+        print("Upload successful")
 
-blob_client = blob_service_client.get_blob_client(container=container_name, blob=blob_name)
+    except Exception as e:
+        print(f"CRITICAL ERROR: {e}")
+        # This exit code 1 is what tells K8s the pod failed
+        sys.exit(1)
 
-data = b"Hello from AKS using Workload Identity!"
-
-blob_client.upload_blob(data, overwrite=True)
-
-print("Upload successful")
+if __name__ == "__main__":
+    upload()
