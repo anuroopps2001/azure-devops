@@ -115,7 +115,7 @@ REVISION        UPDATED                         STATUS          CHART           
 4               Mon May  4 05:54:58 2026        deployed        blob-app-0.1.0  1.16.0          Upgrade complete                                                                                                            ```
 
 ```bash
-azureuser@agent-vm:~/azure-devops/helm-chart/blob-app$ helm rollback blob-app 1
+azureuser@agent-vm:~/azure-devops/helm-chart/blob-app$ helm rollback blob-app <revision_number>
 Rollback was a success! Happy Helming!
 ```
 ```bash
