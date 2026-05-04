@@ -11,7 +11,7 @@ blob_service_client = BlobServiceClient(
     credential=credential
 )
 
-container_name = "appdata"
+container_name = "appdat"
 blob_name = "from-app.txt"
 
 blob_client = blob_service_client.get_blob_client(container=container_name, blob=blob_name)

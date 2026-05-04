@@ -21,4 +21,4 @@ spec:
           image: anuroopmgsq.azurecr.io/python-azure-storage:v1
           env:
             - name: STORAGE_ACCOUNT
-              value: "anurooppsa9u"
+              value: "anurooppsa9uz"
