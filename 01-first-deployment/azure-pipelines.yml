@@ -46,6 +46,13 @@ stages:
     steps:
 
     - script: |
+        echo "Logging into Azure..."
+        az login --identity --client-id $(CLIENT_ID)
+        echo "Fetching AKS credentials..."
+        az aks get-credentials --resource-group rg-hubspoke-dev --name aks-hubspoke-dev --overwrite-existing
+      displayName: Authenticate and Set K8s Context
+
+    - script: |
         echo "Applying K8s Manifests"
         kubectl apply -f 01-first-deployment/k8s
       displayName: Apply Manifests
