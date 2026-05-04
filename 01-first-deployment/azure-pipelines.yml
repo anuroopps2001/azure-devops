@@ -42,6 +42,8 @@ stages:
 
   jobs:
   - job: Deploy
+    pool: 
+      name: self-hosted-agents
 
     steps:
 
