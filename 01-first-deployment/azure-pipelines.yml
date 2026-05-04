@@ -1,38 +1,62 @@
-trigger:
+trigger: 
 - main
 
-pool:
-  name: self-hosted-agents
-
-variables:
+variables: 
   IMAGE_NAME: anuroopmgsq.azurecr.io/python-azure-storage
   TAG: $(Build.BuildId)
 
-steps:
+stages:
+- stage: Build
+  displayName: Build and Push Image
+  jobs:
+  - job: Build
+    pool: 
+      name: self-hosted-agents
+    
+    steps:
+    - script: |
+        echo "Building Docker Image..!!!"
+        docker build -t $(IMAGE_NAME):$(TAG) 01-first-deployment
+      displayName: Build Image
 
-- script: |
-    docker build -t $(IMAGE_NAME):$(TAG) 01-first-deployment
-  displayName: Build Docker Image
+    - script: |
+        echo "Tagging Image"
+        docker tag $(IMAGE_NAME):$(TAG) $(IMAGE_NAME):latest
+      displayName: Tag Image
 
-- script: |
-    docker tag $(IMAGE_NAME):$(TAG) $(IMAGE_NAME):latest
-  displayName: Tag Image
+    - script: |
+        echo "Logging into ACR using managed identity"
+        az login --identity --client-id $(CLIENT_ID)
+        az acr login --name anuroopmgsq
+      displayName: ACR Login using User Managed Identity
 
-- script: |
-    docker push $(IMAGE_NAME):$(TAG)
-    docker push $(IMAGE_NAME):latest
-  displayName: Push Images
+    - script: |
+        echo "Pushing Image"
+        docker push $(IMAGE_NAME):$(TAG)
+        docker push $(IMAGE_NAME):latest
+      displayName: Push Images
 
-- script: |
-    kubectl apply -f 01-first-deployment/k8s/serviceaccount.yaml
-    kubectl apply -f 01-first-deployment/k8s/deployment.yaml
-  displayName: Apply Manifests
+- stage: Deploy
+  displayName: Deploy to AKS
+  dependsOn: Build   # Will start only if Build stage gets successful
 
-- script: |
-    kubectl set image deployment/blob-app \
-      app=$(IMAGE_NAME):$(TAG)
-  displayName: Update Deployment Image
+  jobs:
+  - job: Deploy
 
-- script: |
-    kubectl rollout status deployment/blob-app
-  displayName: Verify Deployment
+    steps:
+
+    - script: |
+        echo "Applying K8s Manifests"
+        kubectl apply -f 01-first-deployment/k8s
+      displayName: Apply Manifests
+
+    - script: |
+        echo "Updating deployment with new images"
+        kubectl set image deploy/blob-app \
+          app=$(IMAGE_NAME):$(TAG)
+      displayName: Update Image tag
+
+    - script: |
+        echo "Waiting for rollout.."
+        kubectl rollout status deploy/blob-app
+      displayName: Verify Deployment

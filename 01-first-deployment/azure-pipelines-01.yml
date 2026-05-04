@@ -1,0 +1,38 @@
+trigger:
+- main
+
+pool:
+  name: self-hosted-agents
+
+variables:
+  IMAGE_NAME: anuroopmgsq.azurecr.io/python-azure-storage
+  TAG: $(Build.BuildId)
+
+steps:
+
+- script: |
+    docker build -t $(IMAGE_NAME):$(TAG) 01-first-deployment
+  displayName: Build Docker Image
+
+- script: |
+    docker tag $(IMAGE_NAME):$(TAG) $(IMAGE_NAME):latest
+  displayName: Tag Image
+
+- script: |
+    docker push $(IMAGE_NAME):$(TAG)
+    docker push $(IMAGE_NAME):latest
+  displayName: Push Images
+
+- script: |
+    kubectl apply -f 01-first-deployment/k8s/serviceaccount.yaml
+    kubectl apply -f 01-first-deployment/k8s/deployment.yaml
+  displayName: Apply Manifests
+
+- script: |
+    kubectl set image deployment/blob-app \
+      app=$(IMAGE_NAME):$(TAG)
+  displayName: Update Deployment Image
+
+- script: |
+    kubectl rollout status deployment/blob-app
+  displayName: Verify Deployment
