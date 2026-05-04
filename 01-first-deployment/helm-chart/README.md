@@ -105,3 +105,26 @@ NAME                        READY   STATUS      RESTARTS      AGE
 blob-app-5db5dd74c5-glhs4   0/1     Completed   1 (11s ago)   12s
 azureuser@agent-vm:~/azure-devops/helm-chart$
 ```
+### Helm history and rollback
+```bash
+azureuser@agent-vm:~/azure-devops/helm-chart/blob-app$ helm history blob-app
+REVISION        UPDATED                         STATUS          CHART           APP VERSION     DESCRIPTION                                                                                                                                                                                                             
+1               Mon May  4 05:23:46 2026        superseded      blob-app-0.1.0  1.16.0          Install complete                                                                                                                                                                                                        
+2               Mon May  4 05:25:12 2026        superseded      blob-app-0.1.0  1.16.0          Upgrade complete                                                                                                                                                                                                        
+3               Mon May  4 05:52:46 2026        failed          blob-app-0.1.0  1.16.0          Upgrade "blob-app" failed: conflict occurred while applying object default/blob-app apps/v1, Kind=Deployment: Apply failed with 1 conflict: conflict with "kubectl-set" using apps/v1: .spec.template.spec.containers[name="app"].image
+4               Mon May  4 05:54:58 2026        deployed        blob-app-0.1.0  1.16.0          Upgrade complete                                                                                                            ```
+
+```bash
+azureuser@agent-vm:~/azure-devops/helm-chart/blob-app$ helm rollback blob-app 1
+Rollback was a success! Happy Helming!
+```
+```bash
+azureuser@agent-vm:~/azure-devops/helm-chart/blob-app$ helm history blob-app
+REVISION        UPDATED                         STATUS          CHART           APP VERSION     DESCRIPTION                                                                                                                                                                                                             
+1               Mon May  4 05:23:46 2026        superseded      blob-app-0.1.0  1.16.0          Install complete                                                                                                                                                                                                        
+2               Mon May  4 05:25:12 2026        superseded      blob-app-0.1.0  1.16.0          Upgrade complete                                                                                                                                                                                                        
+3               Mon May  4 05:52:46 2026        failed          blob-app-0.1.0  1.16.0          Upgrade "blob-app" failed: conflict occurred while applying object default/blob-app apps/v1, Kind=Deployment: Apply failed with 1 conflict: conflict with "kubectl-set" using apps/v1: .spec.template.spec.containers[name="app"].image
+4               Mon May  4 05:54:58 2026        superseded      blob-app-0.1.0  1.16.0          Upgrade complete                                                                                                                                                                                                        
+5               Mon May  4 06:06:49 2026        deployed        blob-app-0.1.0  1.16.0          Rollback to 1                                                                                                                                                                                                           
+azureuser@agent-vm:~/azure-devops/helm-chart/blob-app$
+```

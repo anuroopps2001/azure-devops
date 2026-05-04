@@ -59,9 +59,23 @@ stages:
         helm upgrade --install blob-app 01-first-deployment/helm-chart/blob-app \
         --set image.repository=$(IMAGE_NAME) \
         --set image.tag=$(TAG)
-      displayName: Apply Helm Manifests
 
-    - script: |
-        echo "Waiting for rollout.."
-        kubectl rollout status deploy/blob-app
-      displayName: Verify Deployment
+        echo "Verifying rollout.."
+        if ! kubectl rollout status deploy/blob-app --timeout=60s; then
+          echo "Deployment Failed! Rolling back to previous stable version"
+
+          LAST_STABLE_REVISION=$(helm history blob-app -ojson | jq '.[-2].revision')
+
+          echo "Rolling back to previous stable version $LAST_STABLE_VERSION"
+          helm rollback blob-app $LAST_STABLE_VERSION
+
+          echo "Verifying Rollback..."
+          ROLLBACK_STATUS=$(helm status blob-app -ojson | jq -r .info.status)
+
+          if [ "$ROLLBACK_STATUS" == "deployed"]; then
+            echo "Rollback confirmed by helm"
+            kubectl rollout status deploy/blob-app --timeout=60s
+          else
+            echo "Rollback failed or struck in $ROLLBACK_STATUS"
+            exit 1
+      displayName: Deployment with helm and Rollback
