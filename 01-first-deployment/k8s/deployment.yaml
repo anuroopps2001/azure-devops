@@ -23,4 +23,4 @@ spec:
             - name: STORAGE_ACCOUNT
               value: "anurooppsa9uz"
             - name: CONTAINER_NAME
-              value: "aapdat"
+              value: "aapdata"

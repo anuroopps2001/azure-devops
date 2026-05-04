@@ -22,6 +22,8 @@ spec:
           env:
             - name: STORAGE_ACCOUNT
               value: "anurooppsa9uz"
+            - name: CONTAINER_NAME
+              value: "appdata"
           resources:
             requests:
               memory: "{{ .Values.resources.requests.memory }}"
