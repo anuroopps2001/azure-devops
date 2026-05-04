@@ -55,11 +55,15 @@ stages:
       displayName: Authenticate and Set K8s Context
 
     - script: |
-        echo "Applying helm chart"
-        helm upgrade --install blob-app 01-first-deployment/helm-chart/blob-app \
-        --set image.repository=$(IMAGE_NAME) \
-        --set image.tag=$(TAG)
-      displayName: Apply Helm Manifests
+        echo "Applying K8s Manifests"
+        kubectl apply -f 01-first-deployment/k8s
+      displayName: Apply Manifests
+
+    - script: |
+        echo "Updating deployment with new images"
+        kubectl set image deploy/blob-app \
+          app=$(IMAGE_NAME):$(TAG)
+      displayName: Update Image tag
 
     - script: |
         echo "Waiting for rollout.."
