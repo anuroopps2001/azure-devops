@@ -49,7 +49,7 @@ stages:
 
         helm upgrade --install blob-app-dev 01-first-deployment/helm-chart/blob-app \
         -n dev \
-        -f 01-first-deployment/helm-chart/blob-app/values-dev.yaml\
+        -f 01-first-deployment/helm-chart/blob-app/values-dev.yaml \
         --set image.tag=$(TAG)
 
         echo "Verifying rollout.."
