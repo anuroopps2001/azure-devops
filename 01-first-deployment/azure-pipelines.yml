@@ -79,41 +79,27 @@ stages:
   condition: succeeded()
 
   jobs:
-  - job: DeployProd
+  - deployment: DeployProd
+    environment: prod
     pool: self-hosted-agents
-    
-    steps:
-    - script: |
-        set -e
-        echo "Logging into Azure..."
-        az login --identity --client-id $(CLIENT_ID)
-        az aks get-credentials --resource-group rg-hubspoke-dev --name aks-hubspoke-dev --overwrite-existing
 
-        helm upgrade --install blob-app-prod 01-first-deployment/helm-chart/blob-app \
-        -n prod \
-        -f 01-first-deployment/helm-chart/blob-app/values-prod.yaml \
-        --set image.tag=$(TAG)
 
-        echo "Verifying rollout.."
-        if ! kubectl rollout status deploy/blob-app --timeout=60s; then
-          echo "Deployment Failed! Rolling back to previous stable version"
+    strategy: 
+      runOnce:
+        deploy:
+          steps:
+          - script: |
+              set -e
+              az login --identity --client-id $(CLIENT_ID)
+              az aks get-credentials --resource-group rg-hubspoke-dev --name aks-hubspoke-dev --overwrite-existing
 
-          LAST_STABLE_REVISION=$(helm history blob-app -ojson | jq '.[-2].revision')
+              helm upgrade --install blob-app-prod 01-first-deployment/helm-chart/blob-app \
+              -n prod \
+              -f 01-first-deployment/helm-chart/blob-app/values-prod.yaml \
+              --set image.tag=$(TAG)
 
-          echo "Rolling back to previous stable version $LAST_STABLE_VERSION"
-          helm rollback blob-app $LAST_STABLE_VERSION
+              kubectl rollout status deploy/blob-app --timeout=60s
 
-          echo "Verifying Rollback..."
-          ROLLBACK_STATUS=$(helm status blob-app -ojson | jq -r .info.status)
-
-          if [ "$ROLLBACK_STATUS" == "deployed"]; then
-            echo "Rollback confirmed by helm"
-            kubectl rollout status deploy/blob-app --timeout=60s
-          else
-            echo "Rollback failed or struck in $ROLLBACK_STATUS"
-            exit 1
-          fi
-        fi
-      displayName: Deployment to Prod
+            displayName: Deployment to Prod
 
   
