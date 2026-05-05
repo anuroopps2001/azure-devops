@@ -1,0 +1,19 @@
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: kv-secrets
+  namespace: dev
+spec:
+  provider: azure
+  parameters:
+    usePodIdentity: "false"
+    useVMManagedIdentity: "false"
+    clientID: 57be83fe-9cb8-4db6-b5eb-7a71c46ecdc7
+    keyvaultName: a9uz-keyvault
+    tenantId: 6806c634-9b32-4bc9-a9b3-f6f2c34b73ba
+
+    objects: |
+      array:
+        - |
+          objectName: devpassword
+          objectType: secret
