@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+  blob-app:
+    build:
+      context: .
+      dockerfile: Dockerfile 
+    container_name: blob-app
+
+    ports:
+      - "80:80"
+
+    environment:
+      STORAGE_ACCOUNT: anurooppsa9uz
+      CONTAINER_NAME: appdata
+
+    restart: unless-stopped
