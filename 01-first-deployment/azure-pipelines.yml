@@ -53,20 +53,20 @@ stages:
         --set image.tag=$(TAG)
 
         echo "Verifying rollout.."
-        if ! kubectl rollout status deploy/blob-app --timeout=60s; then
+        if ! kubectl rollout status deploy/blob-app-dev --timeout=60s; then
           echo "Deployment Failed! Rolling back to previous stable version"
 
-          LAST_STABLE_REVISION=$(helm history blob-app -ojson | jq '.[-2].revision')
+          LAST_STABLE_REVISION=$(helm history blob-app-dev -ojson | jq '.[-2].revision')
 
           echo "Rolling back to previous stable version $LAST_STABLE_VERSION"
-          helm rollback blob-app $LAST_STABLE_VERSION
+          helm rollback blob-app-dev $LAST_STABLE_VERSION
 
           echo "Verifying Rollback..."
-          ROLLBACK_STATUS=$(helm status blob-app -ojson | jq -r .info.status)
+          ROLLBACK_STATUS=$(helm status blob-app-dev -ojson | jq -r .info.status)
 
           if [ "$ROLLBACK_STATUS" == "deployed"]; then
             echo "Rollback confirmed by helm"
-            kubectl rollout status deploy/blob-app --timeout=60s
+            kubectl rollout status deploy/blob-app-dev --timeout=60s
           else
             echo "Rollback failed or struck in $ROLLBACK_STATUS"
             exit 1
