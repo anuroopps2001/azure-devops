@@ -47,7 +47,7 @@ stages:
         az login --identity --client-id $(CLIENT_ID)
         az aks get-credentials --resource-group rg-hubspoke-dev --name aks-hubspoke-dev --overwrite-existing
 
-        helm install blob-app-dev 01-first-deployment/helm-chart/blob-app \
+        helm upgrade --install blob-app-dev 01-first-deployment/helm-chart/blob-app \
         -n dev \
         -f 01-first-deployment/helm-chart/blob-app/values-dev.yaml \
         --set image.tag=$(TAG)
