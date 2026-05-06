@@ -11,3 +11,13 @@ resources:
   limits:
     cpu: "5m"
     memory: "20Ki"
+
+livenessProbe:
+  httpGet:
+    path: /
+    port: 80
+
+readinessProbe:
+  httpGet:
+    path: /
+    port: 80
